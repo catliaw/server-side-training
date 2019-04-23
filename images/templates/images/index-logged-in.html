@@ -7,16 +7,16 @@
 
 {% block content %}
   {% load static %}
-    <div class="container">
-      <h1>YOU GET A CORGI!</h1>
-      <p>Hi {{ user }}!</p>
-      <br>
-      <button type="button" class="btn btn-primary" onclick="getCorgi()">Get a New Corgi!</button>
-      <br>
-      <img id="corgi_image" class="corgi" src="http://cdn.akc.org/corgi-4.jpg">
-    </div>
-
-  {% endblock %}
+  <div class="container">
+    <h1>YOU GET A CORGI!</h1>
+    <p>Hi {{ user }}!</p>
+     <input type="hidden" id="distinct-id" value="{{ request.user }}">
+    <br>
+    <button type="button" class="btn btn-primary" onclick="getCorgi()">Get a New Corgi!</button>
+    <br>
+    <img id="corgi_image" class="corgi" src="http://cdn.akc.org/corgi-4.jpg">
+  </div>
+{% endblock %}
 
 {% block bottom %}
   {{ block.super }}

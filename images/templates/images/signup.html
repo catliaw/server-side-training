@@ -2,7 +2,12 @@
 
 {% block content %}
     <h1>Sign up</h1>
-    <form method="post">
+    <form method="POST">
+    	{% if error %}
+            <div class="alert alert-danger">
+                {{ error }}
+            </div>
+        {% endif %}
         {% csrf_token %}
         {{ form.as_p }}
         <button class="btn btn-success" type="submit">Sign up</button>

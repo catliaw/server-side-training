@@ -1,11 +1,18 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth import login as log_in
 from django.contrib.auth import logout as log_out
+from django.contrib.auth.models import User
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
-
 from images.forms import SignUpForm
 from images.forms import LoginForm
+from mixpanel import Mixpanel
+import datetime
+import json
+import urllib
+
+
+mp = Mixpanel("71444cfc3c55b4714b0c83f0b4220a9b")
 
 
 def index(request):
@@ -19,6 +26,13 @@ def index(request):
     else:
         return render(request, 'images/index-logged-out.html')
 
+def _get_distinct_id(request):
+    """Gets distinct_id from client-side cookie.
+    """
+    raw_cookie = request.COOKIES['mp_71444cfc3c55b4714b0c83f0b4220a9b_mixpanel']
+    json_cookie = json.loads(urllib.unquote(raw_cookie).decode('utf8'))
+    d_id = json_cookie['distinct_id']
+    return d_id
 
 def signup(request):
     """Render the Signup form or a process a signup
@@ -26,12 +40,30 @@ def signup(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
 
+        # import pdb; pdb.set_trace()
+
         if form.is_valid():
             form.save()
             username = form.cleaned_data.get('username')
             raw_password = form.cleaned_data.get('password1')
             user = authenticate(username=username, password=raw_password)
             log_in(request, user)
+
+            distinct_id = _get_distinct_id(request)
+            mp.alias(username, distinct_id)
+
+            now_time = datetime.datetime.now()
+            mp.track(distinct_id, 'Signup', {
+                'Username': username,
+                'Signup Date': now_time
+                })
+            mp.people_set(distinct_id, {
+                'Username': username,
+                'Signup Date': now_time,
+                'Number of Logins': 1,
+                'Number of Images': 1
+                })
+
             return HttpResponseRedirect('/')
 
     else:
@@ -49,19 +81,32 @@ def login(request):
         user = authenticate(username=username, password=password)
         if user is not None:
             log_in(request, user)
+            mp.track(username, 'Login', {
+                'Username': username
+                })
+            mp.people_increment(username, {
+                'Number of Logins': 1
+                })
             return HttpResponseRedirect('/')
         else:
             return render(request, 'images/login.html', {
                 'form': LoginForm,
                 'error': 'Please try again'
             })
+
     else:
         return render(request, 'images/login.html', {'form': LoginForm})
 
+# def save_profile(request):
+#     profile = Profile.objects.get(email=request.user.email)
+#     distinct_id = form.cleaned_data.get('distinct_id')
+#     mp.alias(profile.email, distinct_id)
 
 
 def logout(request):
     """Logout the user
     """
+
     log_out(request)
+
     return HttpResponseRedirect('/')

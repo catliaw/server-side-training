@@ -4,6 +4,18 @@ need to add extra functions and the Mixpanel integration code in this
 file.
 **/
 
+if (document.getElementById("distinct-id")) {
+    var distinctId = document.getElementById("distinct-id").value;
+    if (distinctId) {
+        mixpanel.identify(distinctId);
+    }
+}
+
+setTimeout(function(){
+    mixpanel.track("Page View", {
+        'Page': $('h1').text()
+    });
+}, 1000);
 
 // changes the image to a random corgi via hardcoded links
 function getCorgi() {
@@ -27,4 +39,15 @@ function getCorgi() {
     var randomNumber = Math.floor((Math.random() * corgis.length));
     var chosenCorgi = corgis[randomNumber];
     document.getElementById("corgi_image").src = chosenCorgi;
+    mixpanel.track("Get Image", {
+        "Image": chosenCorgi
+    });
+    mixpanel.people.increment({"Number of Images": 1});
 }
+
+// reset Mixpanel distinct_id
+function reset(){
+    mixpanel.track("Logout");
+    mixpanel.reset();
+}
+
