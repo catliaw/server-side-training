@@ -44,18 +44,19 @@ def signup(request):
 
         if form.is_valid():
             form.save()
+            distinct_id = _get_distinct_id(request)
             username = form.cleaned_data.get('username')
             raw_password = form.cleaned_data.get('password1')
+            
             user = authenticate(username=username, password=raw_password)
+            
+            mp.alias(username, distinct_id)
+            
             log_in(request, user)
 
-            distinct_id = _get_distinct_id(request)
-            mp.alias(username, distinct_id)
-
-            now_time = datetime.datetime.now()
             mp.track(distinct_id, 'Signup', {
                 'Username': username,
-                'Signup Date': now_time
+                'Signup Date': datetime.datetime.now()
                 })
             mp.people_set(distinct_id, {
                 'Username': username,
@@ -80,13 +81,13 @@ def login(request):
         password = request.POST['password']
         user = authenticate(username=username, password=password)
         if user is not None:
-            log_in(request, user)
             mp.track(username, 'Login', {
                 'Username': username
                 })
             mp.people_increment(username, {
                 'Number of Logins': 1
                 })
+            log_in(request, user)
             return HttpResponseRedirect('/')
         else:
             return render(request, 'images/login.html', {
